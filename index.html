@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Fast Food ALIXAN</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:#fff7e8;
+      color:#222;
+      padding-bottom:110px;
+    }
+    .header{
+      background:linear-gradient(135deg,#ffb300,#ff4b00);
+      color:#fff;
+      padding:24px 14px;
+      text-align:center;
+      border-bottom-left-radius:28px;
+      border-bottom-right-radius:28px;
+      box-shadow:0 8px 20px rgba(0,0,0,.2);
+    }
+    .logo{
+      width:90px;
+      height:90px;
+      object-fit:contain;
+      background:#fff;
+      border-radius:20px;
+      padding:8px;
+      margin-bottom:8px;
+    }
+    h1{margin:4px 0;font-size:28px}
+    .sub{font-weight:bold;font-size:15px}
+    .langs,.cats{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      padding:12px;
+    }
+    button{
+      border:none;
+      border-radius:18px;
+      padding:12px 16px;
+      font-weight:bold;
+      cursor:pointer;
+      background:#ff4b00;
+      color:#fff;
+      box-shadow:0 6px 14px rgba(0,0,0,.15);
+      white-space:nowrap;
+    }
+    button.active{
+      background:#222;
+      color:#fff;
+    }
+    .products{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:14px;
+      padding:12px;
+    }
+    .card{
+      background:#fff;
+      border-radius:22px;
+      padding:12px;
+      text-align:center;
+      box-shadow:0 8px 18px rgba(0,0,0,.13);
+    }
+    .pic{
+      height:130px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#fff3dd;
+      border-radius:18px;
+      margin-bottom:8px;
+      font-size:46px;
+    }
+    .name{font-weight:900;min-height:38px}
+    .meta{font-size:12px;opacity:.7;margin-top:4px}
+    .price{font-weight:900;color:#ff4b00;margin-top:8px}
+    .counter{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      margin-top:10px;
+    }
+    .counter button{
+      width:34px;
+      height:34px;
+      padding:0;
+      border-radius:50%;
+      font-size:20px;
+    }
+    .cart{
+      margin:12px;
+      background:#fff;
+      padding:16px;
+      border-radius:24px;
+      box-shadow:0 8px 18px rgba(0,0,0,.13);
+    }
+    .cart-item{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 0;
+      border-bottom:1px solid #eee;
+      font-weight:bold;
+    }
+    input,textarea{
+      width:100%;
+      padding:14px;
+      margin-top:10px;
+      border-radius:18px;
+      border:1px solid #ddd;
+      font-size:15px;
+    }
+    textarea{height:80px}
+    .row{
+      display:flex;
+      gap:8px;
+      margin-top:10px;
+    }
+    .row button{
+      flex:1;
+      padding:12px 8px;
+    }
+    .order{
+      width:100%;
+      margin-top:14px;
+      font-size:17px;
+      padding:16px;
+      background:#111;
+    }
+    .sticky{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(255,75,0,.9);
+      padding:12px;
+    }
+    .sticky-inner{
+      background:#fff;
+      border-radius:20px;
+      padding:12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      max-width:560px;
+      margin:auto;
+      font-weight:900;
+    }
+    .popup{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .popup div{
+      background:#fff;
+      padding:24px;
+      border-radius:22px;
+      text-align:center;
+      font-weight:bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <img class="logo" src="images/logo.png" onerror="this.style.display='none'">
+  <h1>Fast Food ALIXAN</h1>
+  <div class="sub" id="subtitle">Быстро • Вкусно • С доставкой</div>
+</div>
+
+<div class="langs">
+  <button onclick="setLang('ru')" id="lang_ru">🇷🇺 RU</button>
+  <button onclick="setLang('uz')" id="lang_uz">🇺🇿 UZ</button>
+  <button onclick="setLang('en')" id="lang_en">🇬🇧 EN</button>
+</div>
+
+<div class="cats" id="cats"></div>
+<div class="products" id="products"></div>
+
+<div class="cart" id="cartBox">
+  <h2 id="cartTitle">Корзина</h2>
+  <div id="cartItems"></div>
+
+  <h3><span id="totalLabel">Итого</span>: <span id="total">0</span> <span id="currency">сум</span></h3>
+
+  <div class="row">
+    <button onclick="setType('delivery')" id="type_delivery">🚚 Доставка</button>
+    <button onclick="setType('pickup')" id="type_pickup">🏃 Самовывоз</button>
+  </div>
+
+  <input id="phone" placeholder="📞 Номер телефона">
+  <input id="address" placeholder="📍 Адрес доставки">
+  <textarea id="comment" placeholder="✍️ Комментарий"></textarea>
+
+  <div class="row">
+    <button onclick="setPayment('cash')" id="pay_cash">💵 Наличные</button>
+    <button onclick="setPayment('click')" id="pay_click">🟢 Click</button>
+    <button onclick="setPayment('online')" id="pay_online">💳 Online</button>
+  </div>
+
+  <button class="order" onclick="sendOrder()" id="orderBtn">Оформить заказ</button>
+</div>
+
+<div class="sticky">
+  <div class="sticky-inner">
+    <span><span id="stickyTotal">0</span> сум</span>
+    <button onclick="document.getElementById('cartBox').scrollIntoView({behavior:'smooth'})" id="cartBtn">Корзина</button>
+  </div>
+</div>
+
+<div class="popup" id="popup">
+  <div id="popupText">✅</div>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+let lang = "ru";
+let currentCat = "burgers";
+let cart = {};
+let orderType = "delivery";
+let payment = "cash";
+
+const UI = {
+  ru:{
+    subtitle:"Быстро • Вкусно • С доставкой",
+    cart:"Корзина",
+    total:"Итого",
+    order:"Оформить заказ",
+    phone:"📞 Номер телефона",
+    address:"📍 Адрес доставки",
+    comment:"✍️ Комментарий",
+    empty:"Корзина пустая",
+    reqPhone:"Введите номер телефона",
+    reqAddress:"Введите адрес доставки",
+    success:"✅ Заказ отправлен!",
+    cartBtn:"Корзина"
+  },
+  uz:{
+    subtitle:"Tez • Mazali • Yetkazib berish bilan",
+    cart:"Savat",
+    total:"Jami",
+    order:"Buyurtma berish",
+    phone:"📞 Telefon raqami",
+    address:"📍 Yetkazib berish manzili",
+    comment:"✍️ Izoh",
+    empty:"Savat bo‘sh",
+    reqPhone:"Telefon raqamini kiriting",
+    reqAddress:"Manzilni kiriting",
+    success:"✅ Buyurtma yuborildi!",
+    cartBtn:"Savat"
+  },
+  en:{
+    subtitle:"Fast • Tasty • Delivery",
+    cart:"Cart",
+    total:"Total",
+    order:"Place order",
+    phone:"📞 Phone number",
+    address:"📍 Delivery address",
+    comment:"✍️ Comment",
+    empty:"Cart is empty",
+    reqPhone:"Enter phone number",
+    reqAddress:"Enter delivery address",
+    success:"✅ Order sent!",
+    cartBtn:"Cart"
+  }
+};
+
+const CATS = {
+  burgers:{ru:"Бургеры",uz:"Burgerlar",en:"Burgers"},
+  lavash:{ru:"Лаваш",uz:"Lavash",en:"Lavash"},
+  hotdog:{ru:"Хот-дог",uz:"Hot-dog",en:"Hot dog"},
+  snacks:{ru:"Снэки",uz:"Sneklar",en:"Snacks"},
+  drinks:{ru:"Напитки",uz:"Ichimliklar",en:"Drinks"}
+};
+
+const MENU = {
+  burgers:[
+    item("burger_classic","🍔",{ru:"Классический бургер",uz:"Klassik burger",en:"Classic burger"},"1 шт",25000),
+    item("burger_cheese","🧀",{ru:"Чизбургер",uz:"Chizburger",en:"Cheeseburger"},"1 шт",28000),
+    item("burger_double","🍔",{ru:"Двойной бургер",uz:"Double burger",en:"Double burger"},"1 шт",38000)
+  ],
+  lavash:[
+    item("lavash_chicken","🌯",{ru:"Лаваш с курицей",uz:"Tovuqli lavash",en:"Chicken lavash"},"1 шт",27000),
+    item("lavash_beef","🌯",{ru:"Лаваш с мясом",uz:"Go‘shtli lavash",en:"Beef lavash"},"1 шт",30000)
+  ],
+  hotdog:[
+    item("hotdog_classic","🌭",{ru:"Классический хот-дог",uz:"Klassik hot-dog",en:"Classic hot dog"},"1 шт",18000),
+    item("hotdog_double","🌭",{ru:"Двойной хот-дог",uz:"Double hot-dog",en:"Double hot dog"},"1 шт",25000)
+  ],
+  snacks:[
+    item("fries","🍟",{ru:"Картофель фри",uz:"Fri kartoshka",en:"French fries"},"150 гр",15000),
+    item("nuggets","🍗",{ru:"Наггетсы",uz:"Naggets",en:"Nuggets"},"6 шт",22000)
+  ],
+  drinks:[
+    item("cola","🥤",{ru:"Coca-Cola",uz:"Coca-Cola",en:"Coca-Cola"},"0.5 л",10000),
+    item("fanta","🥤",{ru:"Fanta",uz:"Fanta",en:"Fanta"},"0.5 л",10000),
+    item("water","💧",{ru:"Вода",uz:"Suv",en:"Water"},"0.5 л",5000)
+  ]
+};
+
+function item(id,emoji,names,meta,price){
+  return {id,emoji,names,meta,price};
+}
+
+function setLang(l){
+  lang = l;
+  document.querySelectorAll(".langs button").forEach(b=>b.classList.remove("active"));
+  document.getElementById("lang_"+l).classList.add("active");
+
+  document.getElementById("subtitle").innerText = UI[lang].subtitle;
+  document.getElementById("cartTitle").innerText = UI[lang].cart;
+  document.getElementById("totalLabel").innerText = UI[lang].total;
+  document.getElementById("orderBtn").innerText = UI[lang].order;
+  document.getElementById("phone").placeholder = UI[lang].phone;
+  document.getElementById("address").placeholder = UI[lang].address;
+  document.getElementById("comment").placeholder = UI[lang].comment;
+  document.getElementById("cartBtn").innerText = UI[lang].cartBtn;
+
+  renderCats();
+  renderProducts();
+  renderCart();
+}
+
+function renderCats(){
+  const box = document.getElementById("cats");
+  box.innerHTML = "";
+  Object.keys(CATS).forEach(k=>{
+    const b = document.createElement("button");
+    b.innerText = CATS[k][lang];
+    if(k === currentCat) b.classList.add("active");
+    b.onclick = ()=>{
+      currentCat = k;
+      renderCats();
+      renderProducts();
+    };
+    box.appendChild(b);
+  });
+}
+
+function imgPath(id){
+  return "images/" + id + ".jpg";
+}
+
+function renderProducts(){
+  const box = document.getElementById("products");
+  box.innerHTML = "";
+  MENU[currentCat].forEach(p=>{
+    const c = document.createElement("div");
+    c.className = "card";
+    c.innerHTML = `
+      <div class="pic">
+        <img src="${imgPath(p.id)}" onerror="this.outerHTML='${p.emoji}'" style="max-width:100%;max-height:120px;border-radius:16px;object-fit:cover">
+      </div>
+      <div class="name">${p.names[lang]}</div>
+      <div class="meta">${p.meta}</div>
+      <div class="price">${p.price.toLocaleString()} сум</div>
+      <div class="counter">
+        <button onclick="dec('${p.id}')">−</button>
+        <b>${cart[p.id]?.qty || 0}</b>
+        <button onclick="inc('${p.id}')">+</button>
+      </div>
+    `;
+    box.appendChild(c);
+  });
+}
+
+function findItem(id){
+  for(const cat of Object.values(MENU)){
+    const found = cat.find(x=>x.id===id);
+    if(found) return found;
+  }
+}
+
+function inc(id){
+  const p = findItem(id);
+  if(!cart[id]) cart[id] = {...p, qty:0};
+  cart[id].qty++;
+  renderProducts();
+  renderCart();
+}
+
+function dec(id){
+  if(!cart[id]) return;
+  cart[id].qty--;
+  if(cart[id].qty <= 0) delete cart[id];
+  renderProducts();
+  renderCart();
+}
+
+function total(){
+  return Object.values(cart).reduce((s,x)=>s+x.price*x.qty,0);
+}
+
+function renderCart(){
+  const box = document.getElementById("cartItems");
+  const arr = Object.values(cart);
+
+  if(!arr.length){
+    box.innerHTML = `<div>${UI[lang].empty}</div>`;
+  }else{
+    box.innerHTML = arr.map(x=>`
+      <div class="cart-item">
+        <span>${x.names[lang]} × ${x.qty}</span>
+        <span>${(x.price*x.qty).toLocaleString()} сум</span>
+      </div>
+    `).join("");
+  }
+
+  document.getElementById("total").innerText = total().toLocaleString();
+  document.getElementById("stickyTotal").innerText = total().toLocaleString();
+}
+
+function setType(t){
+  orderType = t;
+  document.getElementById("type_delivery").classList.toggle("active", t==="delivery");
+  document.getElementById("type_pickup").classList.toggle("active", t==="pickup");
+  document.getElementById("address").style.display = t==="delivery" ? "block" : "none";
+}
+
+function setPayment(p){
+  payment = p;
+  ["cash","click","online"].forEach(x=>{
+    document.getElementById("pay_"+x).classList.toggle("active", x===p);
+  });
+}
+
+function showPopup(text){
+  document.getElementById("popupText").innerText = text;
+  document.getElementById("popup").style.display = "flex";
+  setTimeout(()=>document.getElementById("popup").style.display="none",1800);
+}
+
+function sendOrder(){
+  if(!Object.keys(cart).length){
+    showPopup(UI[lang].empty);
+    return;
+  }
+
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
+  const comment = document.getElementById("comment").value.trim();
+
+  if(!phone){
+    showPopup(UI[lang].reqPhone);
+    return;
+  }
+
+  if(orderType === "delivery" && !address){
+    showPopup(UI[lang].reqAddress);
+    return;
+  }
+
+  const items = Object.values(cart).map(x=>({
+    id:x.id,
+    name:x.names[lang],
+    qty:x.qty,
+    price:x.price
+  }));
+
+  const data = {
+    items,
+    total: total(),
+    phone,
+    address,
+    comment,
+    payment,
+    type: orderType,
+    tg: tg.initDataUnsafe?.user || {}
+  };
+
+  tg.sendData(JSON.stringify(data));
+  showPopup(UI[lang].success);
+  cart = {};
+  renderProducts();
+  renderCart();
+}
+
+setLang("ru");
+setType("delivery");
+setPayment("cash");
+</script>
+
+</body>
+</html>
