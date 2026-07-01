@@ -17,6 +17,7 @@ if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN не найден")
 
 ADMIN_ID = int(os.getenv("ADMIN_ID", "6013591658"))
+
 WEBAPP_URL = os.getenv(
     "WEBAPP_URL",
     "https://tahirovdd-lang.github.io/fast-food-alixan/?v=1"
@@ -39,8 +40,15 @@ MENU_BTN_TEXT = "Ochish / Открыть / Open"
 
 def menu_kb():
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=MENU_BTN_TEXT, web_app=WebAppInfo(url=WEBAPP_URL))]],
-        resize_keyboard=True,
+        keyboard=[
+            [
+                KeyboardButton(
+                    text=MENU_BTN_TEXT,
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
+            ]
+        ],
+        resize_keyboard=True
     )
 
 
@@ -122,7 +130,9 @@ async def webapp_order(message: types.Message):
     lines = []
     for item in items:
         lines.append(
-            f"• {safe_html(item.get('name', '—'))} × <b>{safe_html(item.get('qty', 1))}</b> — {safe_html(item.get('price', 0))} сум"
+            f"• {safe_html(item.get('name', '—'))} × "
+            f"<b>{safe_html(item.get('qty', 1))}</b> — "
+            f"{safe_html(item.get('price', 0))} сум"
         )
 
     if not lines:
@@ -144,7 +154,11 @@ async def webapp_order(message: types.Message):
     admin_text += "\n".join(lines)
     admin_text += f"\n\n💰 Итого: <b>{safe_html(total)}</b> сум"
 
-    await message.answer("✅ Заказ принят! Спасибо, что выбрали Fast Food ALIXAN 😊", reply_markup=menu_kb())
+    await message.answer(
+        "✅ Заказ принят! Спасибо, что выбрали Fast Food ALIXAN 😊",
+        reply_markup=menu_kb()
+    )
+
     await bot.send_message(ADMIN_ID, admin_text)
 
 
